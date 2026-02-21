@@ -283,14 +283,36 @@ Enable via Web UI (Settings > Skills) or add to `~/.openclaw/openclaw.json`:
 |-------|-------------|---------------|------------|
 | **slack** | React, send, manage Slack messages | Medium — workspace data access | Use scoped bot tokens, limit channel access |
 | **github** | PR review, issue tracking, CI monitoring | Medium — code repo access | Use read-only personal access tokens |
-| **openai-image-gen** | Image generation (DALL-E) | Low-Medium — API costs | Set spending limits, monitor usage |
 | **notion** | Manage Notion workspaces | Medium — document access | Use integration tokens with limited page access |
-| **spotify-player** | Control Spotify playback | Low — entertainment only | Minimal risk |
 
 Important: For Slack, ensure bot token has minimal scopes:
 
 - `chat:write`, `channels:history`, `channels:read` — sufficient for basic use
 - Avoid `admin.*` scopes
+
+#### Image Generation via Bedrock (No Extra API Keys)
+
+Instead of paying for OpenAI DALL-E, use AWS Bedrock image models you already have access to:
+
+| Model | Best For | Cost |
+|-------|---------|------|
+| **Amazon Nova Canvas** | General image generation, editing | ~$0.04 per image (1024x1024) |
+| **Amazon Titan Image Generator** | Text-to-image, inpainting, outpainting | ~$0.01 per image (512x512) |
+| **Stability AI SDXL** | High-quality artistic images | ~$0.04 per image |
+
+OpenClaw doesn't have a built-in Bedrock image skill yet, but you can generate images directly via the AWS CLI:
+
+```bash
+# Example: Generate an image with Nova Canvas
+aws bedrock-runtime invoke-model \
+  --model-id amazon.nova-canvas-v1:0 \
+  --region us-west-2 \
+  --body '{"taskType":"TEXT_IMAGE","textToImageParams":{"text":"a sunset over mountains"},"imageGenerationConfig":{"numberOfImages":1,"width":1024,"height":1024}}' \
+  --accept application/json \
+  output.json
+```
+
+Since this uses your existing AWS credentials (same IAM auth as your OpenClaw Bedrock config), there are no additional API keys to manage.
 
 ### Tier 3: Advanced (High Risk) — Expert Users Only
 
