@@ -34,15 +34,18 @@ aws configure
 # Enter: Access Key ID, Secret Access Key, Region (e.g. us-west-2), Output format (json)
 ```
 
-### Step 3: Enable Bedrock Models
+### Step 3: Bedrock Model Access
 
-Before OpenClaw can use Bedrock, you must enable model access in the AWS Console:
+Since October 2025, Amazon Bedrock **automatically enables all serverless foundation models** for every AWS account — no manual activation required. You can start using Nova, DeepSeek, Llama, and other models immediately.
+
+**Exception — Anthropic models (Claude):** Require a **one-time usage form** before first use. Complete it via:
 
 1. Go to [Amazon Bedrock Console](https://console.aws.amazon.com/bedrock/)
-2. Navigate to **Model access** in the left sidebar
-3. Click **Manage model access**
-4. Enable the models you want (e.g., Claude Opus 4.6, Claude Sonnet 4.5, Nova 2 Lite)
-5. Wait for access to be granted (usually instant for most models)
+2. Navigate to **Model access** > find any Anthropic model
+3. Submit the one-time usage form (can also be done via API at the organization management account level)
+4. Once submitted, Claude models are enabled across all member accounts in the organization
+
+For more details, see [Simplified Amazon Bedrock Model Access](https://aws.amazon.com/blogs/security/simplified-amazon-bedrock-model-access/).
 
 ### Step 4: Install OpenClaw
 
