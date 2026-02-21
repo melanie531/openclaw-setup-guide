@@ -1,5 +1,208 @@
 # OpenClaw Personal Assistant: Comprehensive Setup Guide
 
+## 0. Installation & Bedrock Setup (macOS)
+
+This section documents the full installation process for running OpenClaw locally on macOS with Amazon Bedrock as the AI backend — no Anthropic/OpenAI API keys needed.
+
+### Prerequisites
+
+- macOS (Apple Silicon or Intel)
+- Node.js >= 22
+- AWS account with Bedrock model access enabled
+- AWS CLI v2 configured with credentials
+
+### Step 1: Install Node.js
+
+```bash
+node --version
+# Requires v22+. If not installed:
+brew install node
+```
+
+### Step 2: Install AWS CLI v2
+
+```bash
+# Download the macOS installer
+curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
+sudo installer -pkg /tmp/AWSCLIV2.pkg -target /
+
+# Verify
+aws --version
+
+# Configure credentials
+aws configure
+# Enter: Access Key ID, Secret Access Key, Region (e.g. us-west-2), Output format (json)
+```
+
+### Step 3: Enable Bedrock Models
+
+Before OpenClaw can use Bedrock, you must enable model access in the AWS Console:
+
+1. Go to [Amazon Bedrock Console](https://console.aws.amazon.com/bedrock/)
+2. Navigate to **Model access** in the left sidebar
+3. Click **Manage model access**
+4. Enable the models you want (e.g., Claude Opus 4.6, Claude Sonnet 4.5, Nova 2 Lite)
+5. Wait for access to be granted (usually instant for most models)
+
+### Step 4: Install OpenClaw
+
+```bash
+npm install -g openclaw@latest
+
+# Verify
+openclaw --version
+```
+
+### Step 5: Create OpenClaw Config Directory
+
+```bash
+mkdir -p ~/.openclaw
+```
+
+### Step 6: Generate Gateway Token
+
+```bash
+GATEWAY_TOKEN=$(openssl rand -hex 24)
+echo "$GATEWAY_TOKEN" > ~/.openclaw/gateway_token.txt
+echo "Your token: $GATEWAY_TOKEN"
+```
+
+### Step 7: Create Bedrock Config
+
+Create `~/.openclaw/openclaw.json` with the following content. Replace `us-west-2` with your AWS region:
+
+```json
+{
+  "gateway": {
+    "mode": "local",
+    "port": 18789,
+    "bind": "loopback",
+    "controlUi": {
+      "enabled": true,
+      "allowInsecureAuth": true
+    },
+    "auth": {
+      "mode": "token",
+      "token": "YOUR_GATEWAY_TOKEN_HERE"
+    }
+  },
+  "models": {
+    "providers": {
+      "amazon-bedrock": {
+        "baseUrl": "https://bedrock-runtime.us-west-2.amazonaws.com",
+        "api": "bedrock-converse-stream",
+        "auth": "aws-sdk",
+        "models": [
+          {
+            "id": "global.anthropic.claude-opus-4-6-v1",
+            "name": "Claude Opus 4.6",
+            "input": ["text", "image"],
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "name": "Claude Sonnet 4.5",
+            "input": ["text", "image"],
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "global.amazon.nova-2-lite-v1:0",
+            "name": "Nova 2 Lite",
+            "input": ["text", "image"],
+            "contextWindow": 300000,
+            "maxTokens": 5120
+          },
+          {
+            "id": "us.amazon.nova-pro-v1:0",
+            "name": "Nova Pro",
+            "input": ["text", "image"],
+            "contextWindow": 300000,
+            "maxTokens": 5120
+          },
+          {
+            "id": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+            "name": "Claude Haiku 4.5",
+            "input": ["text", "image"],
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "amazon-bedrock/global.anthropic.claude-opus-4-6-v1"
+      }
+    }
+  }
+}
+```
+
+Key config explanation:
+- `"auth": "aws-sdk"` — uses your local `~/.aws/credentials` (IAM auth, no plaintext API keys)
+- `"bind": "loopback"` — gateway only accessible on localhost (secure)
+- `"api": "bedrock-converse-stream"` — uses Bedrock's Converse streaming API
+- 5 models configured for different cost/capability tradeoffs
+
+### Step 8: Lock Down Permissions
+
+```bash
+chmod 700 ~/.openclaw
+chmod 600 ~/.openclaw/openclaw.json
+chmod 600 ~/.openclaw/gateway_token.txt
+```
+
+### Step 9: Start OpenClaw
+
+```bash
+openclaw gateway
+```
+
+### Step 10: Access the Web UI
+
+Open in browser:
+
+```
+http://localhost:18789/?token=YOUR_GATEWAY_TOKEN_HERE
+```
+
+### Step 11: Connect Channels (Optional)
+
+In the Web UI, go to **Channels** to connect messaging platforms:
+- **Slack**: Add Slack channel with bot token
+- **WhatsApp**: Scan QR code
+- **Telegram**: Add bot token from @BotFather
+
+### Why Bedrock Instead of Direct API Keys?
+
+| Direct API Keys | Bedrock (This Setup) |
+|----------------|---------------------|
+| Plaintext keys in config files | IAM credentials (auto-rotated) |
+| Single provider lock-in | 8+ models from multiple providers |
+| No audit trail | CloudTrail logs every API call |
+| Manual key rotation | AWS handles credential lifecycle |
+| Per-provider billing | Unified AWS billing |
+
+### Available Bedrock Models
+
+| Model | ID | Best For | Cost (in/out per 1M tokens) |
+|-------|-----|---------|---------------------------|
+| Nova 2 Lite | `global.amazon.nova-2-lite-v1:0` | Everyday tasks (cheapest) | $0.30 / $2.50 |
+| Nova Pro | `us.amazon.nova-pro-v1:0` | Balanced performance | $0.80 / $3.20 |
+| Claude Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` | Fast simple tasks | $1.00 / $5.00 |
+| Claude Sonnet 4.5 | `global.anthropic.claude-sonnet-4-5-20250929-v1:0` | Daily driver | $3.00 / $15.00 |
+| Claude Opus 4.6 | `global.anthropic.claude-opus-4-6-v1` | Complex reasoning | Highest |
+
+### Reference
+
+This setup is based on [aws-samples/sample-OpenClaw-on-AWS-with-Bedrock](https://github.com/aws-samples/sample-OpenClaw-on-AWS-with-Bedrock), adapted for local macOS use instead of EC2 deployment.
+
+---
+
 ## 1. Immediate Security Hardening (DO THIS FIRST)
 
 ### Critical: CVE-2026-25253 — Remote Code Execution (CVSS 8.8)
