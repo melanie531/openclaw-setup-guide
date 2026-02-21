@@ -367,10 +367,10 @@ Since this uses your existing AWS credentials (same IAM auth as your OpenClaw Be
 
 ## 5. Channel Setup for Personal Assistant
 
-| Channel | Use Case | Setup Method |
-|---------|----------|--------------|
-| **Slack** (configured) | Work collaboration, team queries | Already connected |
-| **WhatsApp** | Mobile-first personal assistant | Scan QR in OpenClaw UI |
+| Channel | Use Case | Setup Guide |
+|---------|----------|-------------|
+| **Slack** | Work collaboration, team queries | **[SLACK_SETUP.md](SLACK_SETUP.md)** |
+| **WhatsApp** | Mobile-first personal assistant | **[WHATSAPP_SETUP.md](WHATSAPP_SETUP.md)** |
 | **Telegram** | Quick commands, lightweight messaging | Create bot via @BotFather |
 | **Discord** | Community/hobby management | Create bot in Developer Portal |
 | **iMessage** (BlueBubbles) | macOS-native messaging | Requires BlueBubbles server |
